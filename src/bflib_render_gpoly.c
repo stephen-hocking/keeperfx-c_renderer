@@ -18,6 +18,8 @@
  */
 /******************************************************************************/
 #include "pre_inc.h"
+#include <stdint.h>
+#include <stdbool.h>
 #include "bflib_render.h"
 
 #include "globals.h"
@@ -30,9 +32,9 @@
 
 /******************************************************************************/
 /******************************************************************************/
-long gpoly_countdown[] = { 0,-15,-14,-13,-12,-11,-10, -9,  -8, -7, -6, -5, -4, -3, -2, -1 };
+int32_t gpoly_countdown[] = { 0,-15,-14,-13,-12,-11,-10, -9,  -8, -7, -6, -5, -4, -3, -2, -1 };
 
-long gpoly_reptable[] = {
+int32_t gpoly_reptable[] = {
          0x0,0x7FFFFFFF,0x3FFFFFFF,0x2AAAAAAA,0x1FFFFFFF,0x19999999,0x15555555,0x12492492,
   0x0FFFFFFF,0x0E38E38E,0x0CCCCCCC,0x0BA2E8BA,0x0AAAAAAA, 0x9D89D89, 0x9249249, 0x8888888,
    0x7FFFFFF, 0x7878787, 0x71C71C7, 0x6BCA1AF, 0x6666666, 0x6186186, 0x5D1745D, 0x590B216,
@@ -67,7 +69,7 @@ long gpoly_reptable[] = {
    0x0842108, 0x0839930, 0x083126E, 0x0828CBF, 0x0820820, 0x081848D, 0x0810204, 0x0808080,
          0x0,       0x0 };
 
-long gpoly_divtable[][64] = {
+int32_t gpoly_divtable[][64] = {
    {-8388607,-8388607,-8388607,-8388607,-8388607,-8388607,-8388607,-8388607,
     -8388607,-8388607,-8388607,-8388607,-8388607,-8388607,-8388607,-8388607,
     -8388607,-8388607,-8388607,-8388607,-8388607,-8388607,-8388607,-8388607,
@@ -326,24 +328,24 @@ long gpoly_divtable[][64] = {
        50737,   52851,   54965,   57079,   59193,   61307,   63421,   65536,},
 };
 
-static long gpoly_pro_enable_mode_ofs;
+static int32_t gpoly_pro_enable_mode_ofs;
 // Static variables used only inside draw_gpoly().
 // These don't really have to be global; but this helps
 // in using these inside assembly code
-long gpoly_mode;
-long factor_ca,factor_ba,factor_cb,factor_chk;
+int32_t gpoly_mode;
+int32_t factor_ca,factor_ba,factor_cb,factor_chk;
 // More variables - made global temporarly to ease assembly rewriting
 struct PolyPoint *gploc_point_a,*gploc_point_b,*gploc_point_c;
-long gploc_1A4,gploc_1A0;
-short gploc_word01,gploc_word02,gploc_word03;
-long gploc_198,gploc_194,gploc_18C,gploc_188,gploc_180;
-long gploc_pt_ay,gploc_pt_ax,gploc_pt_shax,gploc_170,gploc_16C,gploc_168;
-long gploc_pt_by,gploc_pt_bx,gploc_pt_shbx,gploc_158,gploc_154,gploc_150;
-long gploc_pt_cy,gploc_pt_cx,gploc_pt_shcx,gploc_140,gploc_13C,gploc_138;
-long gploc_12C,gploc_128,gploc_104,gploc_FC,gploc_F8,gploc_F4,gploc_E4,gploc_E0;
-long gploc_D8,gploc_D4,gploc_CC,gploc_C8,gploc_C4,gploc_C0,gploc_BC,gploc_B8,gploc_B4,gploc_B0,gploc_AC,gploc_A7,gploc_A8,gploc_A4,gploc_A0,gploc_9C;
-long gploc_98,gploc_94,gploc_90,gploc_8C,gploc_88,gploc_84,gploc_80,gploc_7C,gploc_78,gploc_74,gploc_68,gploc_64,gploc_60;
-long gploc_5C,gploc_58,gploc_54,gploc_50,gploc_4C,gploc_48,gploc_44,gploc_34,gploc_30,gploc_2C,gploc_28;
+int32_t gploc_1A4,gploc_1A0;
+int16_t gploc_word01,gploc_word02,gploc_word03;
+int32_t gploc_198,gploc_194,gploc_18C,gploc_188,gploc_180;
+int32_t gploc_pt_ay,gploc_pt_ax,gploc_pt_shax,gploc_170,gploc_16C,gploc_168;
+int32_t gploc_pt_by,gploc_pt_bx,gploc_pt_shbx,gploc_158,gploc_154,gploc_150;
+int32_t gploc_pt_cy,gploc_pt_cx,gploc_pt_shcx,gploc_140,gploc_13C,gploc_138;
+int32_t gploc_12C,gploc_128,gploc_104,gploc_FC,gploc_F8,gploc_F4,gploc_E4,gploc_E0;
+int32_t gploc_D8,gploc_D4,gploc_CC,gploc_C8,gploc_C4,gploc_C0,gploc_BC,gploc_B8,gploc_B4,gploc_B0,gploc_AC,gploc_A7,gploc_A8,gploc_A4,gploc_A0,gploc_9C;
+int32_t gploc_98,gploc_94,gploc_90,gploc_8C,gploc_88,gploc_84,gploc_80,gploc_7C,gploc_78,gploc_74,gploc_68,gploc_64,gploc_60;
+int32_t gploc_5C,gploc_58,gploc_54,gploc_50,gploc_4C,gploc_48,gploc_44,gploc_34,gploc_30,gploc_2C,gploc_28;
 /******************************************************************************/
 void gpoly_enable_pentium_pro(TbBool state)
 {
@@ -382,31 +384,31 @@ void draw_gpoly(struct PolyPoint *point_a, struct PolyPoint *point_b, struct Pol
     gpoly_mode = gpoly_pro_enable_mode_ofs + vec_mode;
     { // Check for outranged poly size
         // test lengths
-        int len_bc_x = point_b->X - point_c->X;
+        int32_t len_bc_x = point_b->X - point_c->X;
         if ((len_bc_x < -16383) || (len_bc_x > 16383))
             return;
-        int len_bc_y = point_b->Y - point_c->Y;
+        int32_t len_bc_y = point_b->Y - point_c->Y;
         if ((len_bc_y < -16383) || (len_bc_y > 16383))
             return;
-        int len_ba_x = point_b->X - point_a->X;
+        int32_t len_ba_x = point_b->X - point_a->X;
         if ((len_ba_x < -16383) || (len_ba_x > 16383))
             return;
-        int len_ca_y = point_c->Y - point_a->Y;
+        int32_t len_ca_y = point_c->Y - point_a->Y;
         if ((len_ca_y < -16383) || (len_ca_y > 16383))
             return;
-        int len_ca_x = point_c->X - point_a->X;
+        int32_t len_ca_x = point_c->X - point_a->X;
         if ((len_ca_x < -16383) || (len_ca_x > 16383))
             return;
-        int len_ba_y = point_b->Y - point_a->Y;
+        int32_t len_ba_y = point_b->Y - point_a->Y;
         if ((len_ba_y < -16383) || (len_ba_y > 16383))
             return;
         // test area
         if ((len_ca_x * len_ba_y) - (len_ba_x * len_ca_y) >= 0)
             return;
     }
-    long exceeds_window = ((point_a->X | point_b->X | point_c->X) < 0) || (point_a->X > vec_window_width) || (point_b->X > vec_window_width) || (point_c->X > vec_window_width);
+    int32_t exceeds_window = ((point_a->X | point_b->X | point_c->X) < 0) || (point_a->X > vec_window_width) || (point_b->X > vec_window_width) || (point_c->X > vec_window_width);
     { // Reorder points
-        int min_y = point_a->Y;
+        int32_t min_y = point_a->Y;
         struct PolyPoint* point_tmp;
         if (min_y > point_b->Y)
         {
@@ -432,8 +434,8 @@ void draw_gpoly(struct PolyPoint *point_a, struct PolyPoint *point_b, struct Pol
     if (point_a->Y == point_c->Y)
         return;
     {
-        long len_y = point_c->Y - point_a->Y;
-        long len_x = point_c->X - point_a->X;
+        int32_t len_y = point_c->Y - point_a->Y;
+        int32_t len_x = point_c->X - point_a->X;
         if (len_y != 0)
         {
             if ((len_y < 0) || (len_y > 31) || (len_x < -32) || (len_x > 31))
@@ -692,14 +694,14 @@ void draw_gpoly(struct PolyPoint *point_a, struct PolyPoint *point_b, struct Pol
     }
 }
 
-static void unk_update_gpoly1_tri8a(long * vout0, long * vout1, long vinp2, long vin0, long delta)
+static void unk_update_gpoly1_tri8a(int32_t * vout0, int32_t * vout1, int32_t vinp2, int32_t vin0, int32_t delta)
 {
-    long tmp1 = (vin0 << 16);
-    long tmp2 = (vin0 >> 16);
-    tmp1 += (unsigned char)(vinp2);
+    int32_t tmp1 = (vin0 << 16);
+    int32_t tmp2 = (vin0 >> 16);
+    tmp1 += (uint8_t)(vinp2);
     if ( (char)(vinp2) < 0 )
     {
-        long tmp3 = (unsigned int)tmp1 < delta;
+        int32_t tmp3 = (uint32_t)tmp1 < delta;
         tmp1 -= delta;
         tmp2 = (tmp2 & ~0xff) | ((tmp2 - tmp3) & 0xff);
     }
@@ -707,14 +709,14 @@ static void unk_update_gpoly1_tri8a(long * vout0, long * vout1, long vinp2, long
     *vout0 = tmp2;
 }
 
-static void unk_update_gpoly1_tri16a(long * vout0, long * vout1, long vinp2, long vin0, long delta)
+static void unk_update_gpoly1_tri16a(int32_t * vout0, int32_t * vout1, int32_t vinp2, int32_t vin0, int32_t delta)
 {
-    long tmp1 = (vin0 << 16);
-    long tmp2 = (vin0 >> 16);
-    tmp1 += (unsigned short)(vinp2);
-    if ( (short)(vinp2) < 0 )
+    int32_t tmp1 = (vin0 << 16);
+    int32_t tmp2 = (vin0 >> 16);
+    tmp1 += (uint16_t)(vinp2);
+    if ( (int16_t)(vinp2) < 0 )
     {
-        long tmp3 = (unsigned int)tmp1 < delta;
+        int32_t tmp3 = (uint32_t)tmp1 < delta;
         tmp1 -= delta;
         tmp2 = (tmp2 & ~0xff) | ((tmp2 - tmp3) & 0xff);
     }
@@ -722,30 +724,132 @@ static void unk_update_gpoly1_tri16a(long * vout0, long * vout1, long vinp2, lon
     *vout0 = tmp2;
 }
 
-static void unk_update_gpoly1_tri8b(long * vout0, long * vout1, long * vout2, long vin0, long vin1)
+static void unk_update_gpoly1_tri8b(int32_t * vout0, int32_t * vout1, int32_t * vout2, int32_t vin0, int32_t vin1)
 {
     *vout2 = (vin1 << 16);
-    long tmp1 = (vin0 << 16);
-    tmp1 += ((unsigned int)vin1 >> 16) & 0xff;
+    int32_t tmp1 = (vin0 << 16);
+    tmp1 += ((uint32_t)vin1 >> 16) & 0xff;
     *vout1 = tmp1;
-    *vout0 = (unsigned int)(vin0 << 8) >> 24 << 8;
+    *vout0 = (uint32_t)(vin0 << 8) >> 24 << 8;
 }
 
-static void unk_update_gpoly1_tri16b(long * vout0, long * vout1, long * vout2, long vin0, long vin1, long vin2)
+static void unk_update_gpoly1_tri16b(int32_t * vout0, int32_t * vout1, int32_t * vout2, int32_t vin0, int32_t vin1, int32_t vin2)
 {
-    long tmp1 = (vin1 << 16);
-    tmp1 += ((unsigned int)vin2 >> 8) & 0xffff;
+    int32_t tmp1 = (vin1 << 16);
+    tmp1 += ((uint32_t)vin2 >> 8) & 0xffff;
     *vout2 = tmp1;
     tmp1 = (vin0 << 16);
-    tmp1 += ((unsigned int)vin1 >> 16) & 0xff;
+    tmp1 += ((uint32_t)vin1 >> 16) & 0xff;
     *vout1 = tmp1;
-    tmp1 = (unsigned int)(vin0 << 8) >> 24 << 8;
+    tmp1 = (uint32_t)(vin0 << 8) >> 24 << 8;
     tmp1 += (vin2) & 0xff;
     *vout0 = tmp1;
 }
 
+#define C_RENDER
+#ifdef C_RENDER
+
+static uint16_t CONCAT11(uint8_t p1, uint8_t p2)
+{
+  uint16_t tmp;
+
+  tmp = ((uint16_t)p1 << 8) | (uint16_t)p2;
+  return tmp;
+}
+
+static uint32_t CONCAT22(uint16_t p1, uint16_t p2)
+{
+  uint32_t iVar1;
+
+  iVar1 = ((uint32_t)p1 << 16) | (uint32_t)p2;
+  return iVar1;
+}
+
+static uint32_t CONCAT31(uint32_t left, uint8_t right)
+{
+    uint32_t result = 0;
+    result |= (left << 8);
+    result |= right;
+    return result;
+}
+
+int32_t CARRY1 (uint8_t p1, uint8_t p2)
+{
+  uint32_t tmp = (uint32_t)p1 + (uint32_t)p2;
+  return (tmp > UINT8_MAX);
+}
+
+int32_t CARRY4 (uint32_t p1, uint32_t p2)
+{
+  uint64_t tmp = (uint64_t)p1 + (uint64_t)p2;
+  return (tmp > UINT32_MAX);
+}
+
+#define C_DRAW_GPOLY_SUB1A
+#define C_DRAW_GPOLY_SUB1B
+#define C_DRAW_GPOLY_SUB2A
+#define C_DRAW_GPOLY_SUB2B
+#define C_DRAW_GPOLY_SUB3A
+#define C_DRAW_GPOLY_SUB3B
+#define C_DRAW_GPOLY_SUB4
+#define C_DRAW_GPOLY_SUB5
+#define C_DRAW_GPOLY_SUB6
+// #define C_DRAW_GPOLY_SUB7
+// #define C_DRAW_GPOLY_SUB11
+// #define C_DRAW_GPOLY_SUB12
+// #define C_DRAW_GPOLY_SUB13
+// #define C_DRAW_GPOLY_SUB14
+#endif
+
 void draw_gpoly_sub1a()
 {
+#ifdef C_DRAW_GPOLY_SUB1A
+  int64_t lVar1;
+  int32_t iVar2;
+  uint16_t uVar3;
+  int32_t iVar4;
+  int32_t iVar5;
+  
+  iVar4 = gploc_pt_cy - gploc_pt_ay;
+  iVar5 = iVar4 * (gploc_pt_bx - gploc_pt_ax);
+  if (-1 < factor_chk) {
+    iVar5 = (iVar5 - iVar4) - iVar4;
+  }
+  iVar4 = (gploc_pt_by - gploc_pt_ay) * (gploc_pt_cx - gploc_pt_ax) - (iVar5 + iVar4);
+  if (iVar4 == 0) {
+    gploc_B0 = 0;
+    gploc_AC = 0;
+  }
+  else {
+    iVar4 = (int32_t)(0x7fffffff / (uint64_t)iVar4);
+    lVar1 = (uint64_t)iVar4 *
+            (uint64_t)
+            ((gploc_13C - gploc_16C) * (gploc_pt_by - gploc_pt_ay) -
+            (gploc_154 - gploc_16C) * (gploc_pt_cy - gploc_pt_ay));
+    iVar5 = (int32_t)lVar1;
+    iVar2 = iVar5 << 1;
+    uVar3 = (uint16_t)((uint32_t)iVar2 >> 0x10);
+    gploc_B0 =
+         CONCAT22(uVar3,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar5 < 0)) <<
+         0x10 | (uint32_t)uVar3;
+    if (iVar2 < 0) {
+      gploc_B0 = gploc_B0 + 1;
+    }
+    lVar1 = (uint64_t)iVar4 *
+            (uint64_t)
+            ((gploc_138 - gploc_168) * (gploc_pt_by - gploc_pt_ay) -
+            (gploc_150 - gploc_168) * (gploc_pt_cy - gploc_pt_ay));
+    iVar4 = (int32_t)lVar1;
+    iVar5 = iVar4 << 1;
+    uVar3 = (uint16_t)((uint32_t)iVar5 >> 0x10);
+    gploc_AC =
+         CONCAT22(uVar3,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar4 < 0)) <<
+         0x10 | (uint32_t)uVar3;
+    if (iVar5 < 0) {
+      gploc_AC = gploc_AC + 1;
+    }
+  }
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -835,10 +939,131 @@ gpo_loc_05C8:         # 3C6\n \
     popa    \n \
 " : : : "memory", "cc");
 #endif
+#endif
 }
 
 void draw_gpoly_sub1b()
 {
+#ifdef C_DRAW_GPOLY_SUB1B
+  int64_t lVar1;
+  int32_t iVar2;
+  uint16_t uVar7;
+  uint32_t uVar3;
+  uint32_t uVar4;
+  uint32_t uVar5;
+  uint32_t uVar6;
+  int32_t iVar8;
+  
+  if (factor_chk < 0) {
+    iVar8 = gploc_pt_cy - gploc_pt_ay;
+    if (iVar8 < 0x100) {
+      iVar8 = *(int32_t *)(iVar8 * 4 + 0x40);
+    }
+    else {
+      iVar8 = (int32_t)(0x7fffffff / (int64_t)iVar8);
+    }
+    iVar2 = (gploc_13C - gploc_16C) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar8;
+    uVar7 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar3 = CONCAT22(uVar7,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar7;
+    if (iVar2 < 0) {
+      uVar3 = uVar3 + 1;
+    }
+    iVar2 = (gploc_138 - gploc_168) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar8;
+    uVar7 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar4 = CONCAT22(uVar7,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar7;
+    if (iVar2 < 0) {
+      uVar4 = uVar4 + 1;
+    }
+    uVar7 = (uint16_t)((uint64_t)((int64_t)factor_ca * (int64_t)gploc_B0) >> 0x10);
+    gploc_194 =
+         uVar3 - (CONCAT22(uVar7,(int16_t)((uint64_t)
+                                         ((int64_t)factor_ca * (int64_t)gploc_B0) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar7);
+    uVar7 = (uint16_t)((uint64_t)((int64_t)factor_ca * (int64_t)gploc_AC) >> 0x10);
+    gploc_188 =
+         uVar4 - (CONCAT22(uVar7,(int16_t)((uint64_t)
+                                         ((int64_t)factor_ca * (int64_t)gploc_AC) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar7);
+    uVar7 = (uint16_t)((uint64_t)((int64_t)factor_ca * (int64_t)gploc_A8) >> 0x10);
+    uVar3 = CONCAT22(uVar7,(int16_t)((uint64_t)((int64_t)factor_ca * (int64_t)gploc_A8) >>
+                                  0x20)) << 0x10 | (uint32_t)uVar7;
+  }
+  else {
+    iVar8 = gploc_pt_by - gploc_pt_ay;
+    if (iVar8 < 0x100) {
+      iVar8 = *(int32_t *)(iVar8 * 4 + 0x40);
+    }
+    else {
+      iVar8 = (int32_t)(0x7fffffff / (int64_t)iVar8);
+    }
+    iVar2 = (gploc_154 - gploc_16C) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar8;
+    uVar7 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar3 = CONCAT22(uVar7,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar7;
+    if (iVar2 < 0) {
+      uVar3 = uVar3 + 1;
+    }
+    iVar2 = (gploc_150 - gploc_168) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar8;
+    uVar7 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar4 = CONCAT22(uVar7,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar7;
+    if (iVar2 < 0) {
+      uVar4 = uVar4 + 1;
+    }
+    iVar8 = gploc_pt_cy - gploc_pt_by;
+    if (iVar8 < 0x100) {
+      iVar8 = *(int32_t *)(iVar8 * 4 + 0x40);
+    }
+    else {
+      iVar8 = (int32_t)(0x7fffffff / (int64_t)iVar8);
+    }
+    iVar2 = (gploc_13C - gploc_154) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar8;
+    uVar7 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar5 = CONCAT22(uVar7,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar7;
+    if (iVar2 < 0) {
+      uVar5 = uVar5 + 1;
+    }
+    iVar2 = (gploc_138 - gploc_150) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar8;
+    uVar7 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar6 = CONCAT22(uVar7,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar7;
+    if (iVar2 < 0) {
+      uVar6 = uVar6 + 1;
+    }
+    uVar7 = (uint16_t)((uint64_t)((int64_t)gploc_point_a * (int64_t)gploc_B0) >> 0x10);
+    gploc_194 =
+         uVar3 - (CONCAT22(uVar7,(int16_t)((uint64_t)
+                                         ((int64_t)gploc_point_a * (int64_t)gploc_B0) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar7);
+    uVar7 = (uint16_t)((uint64_t)((int64_t)gploc_point_a * (int64_t)gploc_AC) >> 0x10);
+    gploc_188 =
+         uVar4 - (CONCAT22(uVar7,(int16_t)((uint64_t)
+                                         ((int64_t)gploc_point_a * (int64_t)gploc_AC) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar7);
+    uVar7 = (uint16_t)((uint64_t)((int64_t)gploc_point_a * (int64_t)gploc_A8) >> 0x10);
+    uVar3 = CONCAT22(uVar7,(int16_t)((uint64_t)((int64_t)gploc_point_a * (int64_t)gploc_A8) >>
+                                  0x20)) << 0x10 | (uint32_t)uVar7;
+    uVar7 = (uint16_t)((uint64_t)((int64_t)gploc_point_b * (int64_t)gploc_B0) >> 0x10);
+    gploc_198 =
+         uVar5 - (CONCAT22(uVar7,(int16_t)((uint64_t)
+                                         ((int64_t)gploc_point_b * (int64_t)gploc_B0) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar7);
+    uVar7 = (uint16_t)((uint64_t)((int64_t)gploc_point_b * (int64_t)gploc_AC) >> 0x10);
+    gploc_18C =
+         uVar6 - (CONCAT22(uVar7,(int16_t)((uint64_t)
+                                         ((int64_t)gploc_point_b * (int64_t)gploc_AC) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar7);
+    uVar7 = (uint16_t)((uint64_t)((int64_t)gploc_point_b * (int64_t)gploc_A8) >> 0x10);
+    gploc_1A0 =
+         gploc_1A0 -
+         (CONCAT22(uVar7,(int16_t)((uint64_t)((int64_t)gploc_point_b * (int64_t)gploc_A8) >>
+                                0x20)) << 0x10 | (uint32_t)uVar7);
+  }
+  gploc_point_c = gploc_point_c - uVar3;
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -1019,6 +1244,7 @@ gpo_loc_07B0:         # 520\n \
     popa    \n \
 " : : : "memory", "cc");
 #endif
+#endif
 }
 
 void draw_gpoly_sub1c()
@@ -1046,6 +1272,68 @@ void draw_gpoly_sub1c()
 
 void draw_gpoly_sub2a()
 {
+#ifdef C_DRAW_GPOLY_SUB2A
+  int64_t lVar1;
+  int32_t iVar2;
+  uint16_t uVar3;
+  int32_t iVar4;
+  int32_t iVar5;
+  int32_t iVar6;
+  int32_t iVar7;
+  
+  iVar4 = gploc_pt_cy - gploc_pt_ay;
+  iVar5 = iVar4 * (gploc_pt_bx - gploc_pt_ax);
+  if (-1 < factor_chk) {
+    iVar5 = (iVar5 - iVar4) - iVar4;
+  }
+  iVar4 = (gploc_pt_by - gploc_pt_ay) * (gploc_pt_cx - gploc_pt_ax) - (iVar5 + iVar4);
+  if (iVar4 == 0) {
+    gploc_A8 = 0;
+    gploc_B0 = 0;
+    gploc_AC = 0;
+  }
+  else {
+    iVar4 = (int32_t)(0x7fffffff / (int64_t)iVar4);
+    iVar6 = gploc_pt_cy - gploc_pt_ay;
+    iVar7 = gploc_pt_by - gploc_pt_ay;
+    lVar1 = (int64_t)iVar4 *
+            (int64_t)
+            ((gploc_140 - gploc_170) * iVar7 - (gploc_158 - gploc_170) * iVar6);
+    iVar5 = (int32_t)lVar1;
+    iVar2 = iVar5 << 1;
+    uVar3 = (uint16_t)((uint32_t)iVar2 >> 0x10);
+    gploc_A8 =
+         CONCAT22(uVar3,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar5 < 0)) <<
+         0x10 | (uint32_t)uVar3;
+    if (iVar2 < 0) {
+      gploc_A8 = gploc_A8 + 1;
+    }
+    lVar1 = (int64_t)iVar4 *
+            (int64_t)
+            ((gploc_13C - gploc_16C) * iVar7 - (gploc_154 - gploc_16C) * iVar6);
+    iVar5 = (int32_t)lVar1;
+    iVar2 = iVar5 << 1;
+    uVar3 = (uint16_t)((uint32_t)iVar2 >> 0x10);
+    gploc_B0 =
+         CONCAT22(uVar3,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar5 < 0)) <<
+         0x10 | (uint32_t)uVar3;
+    if (iVar2 < 0) {
+      gploc_B0 = gploc_B0 + 1;
+    }
+    lVar1 = (int64_t)iVar4 *
+            (int64_t)
+            ((gploc_138 - gploc_168) * iVar7 - (gploc_150 - gploc_168) * iVar6);
+    iVar4 = (int32_t)lVar1;
+    iVar5 = iVar4 << 1;
+    uVar3 = (uint16_t)((uint32_t)iVar5 >> 0x10);
+    gploc_AC =
+         CONCAT22(uVar3,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar4 < 0)) <<
+         0x10 | (uint32_t)uVar3;
+    if (iVar5 < 0) {
+      gploc_AC = gploc_AC + 1;
+    }
+  }
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -1155,10 +1443,157 @@ gpo_loc_0A7D:         # 87\n \
     popa    \n \
 " : : : "memory", "cc");
 #endif
+#endif
 }
 
 void draw_gpoly_sub2b()
 {
+#ifdef C_DRAW_GPOLY_SUB2B
+  int64_t lVar1;
+  int32_t iVar2;
+  uint16_t uVar9;
+  uint32_t uVar3;
+  uint32_t uVar4;
+  uint32_t uVar5;
+  uint32_t uVar6;
+  uint32_t uVar7;
+  uint32_t uVar8;
+  int32_t iVar10;
+  
+  if (factor_chk < 0) {
+    iVar10 = gploc_pt_cy - gploc_pt_ay;
+    if (iVar10 < 0x100) {
+      iVar10 = *(int32_t *)(iVar10 * 4 + 0x40);
+    }
+    else {
+      iVar10 = (int)(0x7fffffff / (int64_t)iVar10);
+    }
+    iVar2 = (gploc_140 - gploc_170) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar10;
+    uVar9 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar3 = CONCAT22(uVar9,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar9;
+    if (iVar2 < 0) {
+      uVar3 = uVar3 + 1;
+    }
+    iVar2 = (gploc_13C - gploc_16C) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar10;
+    uVar9 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar4 = CONCAT22(uVar9,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar9;
+    if (iVar2 < 0) {
+      uVar4 = uVar4 + 1;
+    }
+    iVar2 = (gploc_138 - gploc_168) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar10;
+    uVar9 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar5 = CONCAT22(uVar9,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar9;
+    if (iVar2 < 0) {
+      uVar5 = uVar5 + 1;
+    }
+    uVar9 = (uint16_t)((uint64_t)((int64_t)factor_ca * (int64_t)gploc_B0) >> 0x10);
+    gploc_194 =
+         uVar4 - (CONCAT22(uVar9,(int16_t)((uint64_t)
+                                         ((int64_t)factor_ca * (int64_t)gploc_B0) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar9);
+    uVar9 = (uint16_t)((uint64_t)((int64_t)factor_ca * (int64_t)gploc_AC) >> 0x10);
+    gploc_188 =
+         uVar5 - (CONCAT22(uVar9,(int16_t)((uint64_t)
+                                         ((int64_t)factor_ca * (int64_t)gploc_AC) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar9);
+    uVar9 = (uint16_t)((uint64_t)((int64_t)factor_ca * (int64_t)gploc_A8) >> 0x10);
+    gploc_point_c =
+         uVar3 - (CONCAT22(uVar9,(int16_t)((uint64_t)
+                                         ((int64_t)factor_ca * (int64_t)gploc_A8) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar9);
+  }
+  else {
+    iVar10 = gploc_pt_by - gploc_pt_ay;
+    if (iVar10 < 0x100) {
+      iVar10 = *(int32_t *)(iVar10 * 4 + 0x40);
+    }
+    else {
+      iVar10 = (int)(0x7fffffff / (int64_t)iVar10);
+    }
+    iVar2 = (gploc_158 - gploc_170) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar10;
+    uVar9 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar3 = CONCAT22(uVar9,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar9;
+    if (iVar2 < 0) {
+      uVar3 = uVar3 + 1;
+    }
+    iVar2 = (gploc_154 - gploc_16C) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar10;
+    uVar9 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar4 = CONCAT22(uVar9,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar9;
+    if (iVar2 < 0) {
+      uVar4 = uVar4 + 1;
+    }
+    iVar2 = (gploc_150 - gploc_168) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar10;
+    uVar9 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar5 = CONCAT22(uVar9,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar9;
+    if (iVar2 < 0) {
+      uVar5 = uVar5 + 1;
+    }
+    iVar10 = gploc_pt_cy - gploc_pt_by;
+    if (iVar10 < 0x100) {
+      iVar10 = *(int32_t *)(iVar10 * 4 + 0x40);
+    }
+    else {
+      iVar10 = (int)(0x7fffffff / (int64_t)iVar10);
+    }
+    iVar2 = (gploc_140 - gploc_158) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar10;
+    uVar9 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar6 = CONCAT22(uVar9,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar9;
+    if (iVar2 < 0) {
+      uVar6 = uVar6 + 1;
+    }
+    iVar2 = (gploc_13C - gploc_154) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar10;
+    uVar9 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar7 = CONCAT22(uVar9,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar9;
+    if (iVar2 < 0) {
+      uVar7 = uVar7 + 1;
+    }
+    iVar2 = (gploc_138 - gploc_150) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar10;
+    uVar9 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    uVar8 = CONCAT22(uVar9,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar9;
+    if (iVar2 < 0) {
+      uVar8 = uVar8 + 1;
+    }
+    uVar9 = (uint16_t)((uint64_t)((int64_t)gploc_point_a * (int64_t)gploc_B0) >> 0x10);
+    gploc_194 =
+         uVar4 - (CONCAT22(uVar9,(int16_t)((uint64_t)
+                                         ((int64_t)gploc_point_a * (int64_t)gploc_B0) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar9);
+    uVar9 = (uint16_t)((uint64_t)((int64_t)gploc_point_a * (int64_t)gploc_AC) >> 0x10);
+    gploc_188 =
+         uVar5 - (CONCAT22(uVar9,(int16_t)((uint64_t)
+                                         ((int64_t)gploc_point_a * (int64_t)gploc_AC) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar9);
+    uVar9 = (uint16_t)((uint64_t)((int64_t)gploc_point_a * (int64_t)gploc_A8) >> 0x10);
+    gploc_point_c =
+         uVar3 - (CONCAT22(uVar9,(int16_t)((uint64_t)
+                                         ((int64_t)gploc_point_a * (int64_t)gploc_A8) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar9);
+    uVar9 = (uint16_t)((uint64_t)((int64_t)gploc_point_b * (int64_t)gploc_B0) >> 0x10);
+    gploc_198 =
+         uVar7 - (CONCAT22(uVar9,(int16_t)((uint64_t)
+                                         ((int64_t)gploc_point_b * (int64_t)gploc_B0) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar9);
+    uVar9 = (uint16_t)((uint64_t)((int64_t)gploc_point_b * (int64_t)gploc_AC) >> 0x10);
+    gploc_18C =
+         uVar8 - (CONCAT22(uVar9,(int16_t)((uint64_t)
+                                         ((int64_t)gploc_point_b * (int64_t)gploc_AC) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar9);
+    uVar9 = (uint16_t)((uint64_t)((int64_t)gploc_point_b * (int64_t)gploc_A8) >> 0x10);
+    gploc_1A0 =
+         uVar6 - (CONCAT22(uVar9,(int16_t)((uint64_t)
+                                         ((int64_t)gploc_point_b * (int64_t)gploc_A8) >> 0x20
+                                        )) << 0x10 | (uint32_t)uVar9);
+ }
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -1372,6 +1807,7 @@ gpo_loc_0CB0:         # A07\n \
     popa    \n \
 " : : : "memory", "cc");
 #endif
+#endif
 }
 
 void draw_gpoly_sub2c()
@@ -1402,6 +1838,37 @@ void draw_gpoly_sub2c()
 
 void draw_gpoly_sub3a()
 {
+#ifdef C_DRAW_GPOLY_SUB3A
+  int64_t lVar1;
+  uint16_t uVar2;
+  int32_t iVar3;
+  int32_t iVar4;
+  
+  iVar3 = gploc_pt_cy - gploc_pt_ay;
+  iVar4 = iVar3 * (gploc_pt_bx - gploc_pt_ax);
+  if (-1 < factor_chk) {
+    iVar4 = (iVar4 - iVar3) - iVar3;
+  }
+  iVar3 = (gploc_pt_by - gploc_pt_ay) * (gploc_pt_cx - gploc_pt_ax) - (iVar4 + iVar3);
+  if (iVar3 == 0) {
+    gploc_A8 = 0;
+  }
+  else {
+    lVar1 = (int64_t)(int)(0x7fffffff / (int64_t)iVar3) *
+            (int64_t)
+            ((gploc_140 - gploc_170) * (gploc_pt_by - gploc_pt_ay) -
+            (gploc_158 - gploc_170) * (gploc_pt_cy - gploc_pt_ay));
+    iVar3 = (int)lVar1;
+    iVar4 = iVar3 << 1;
+    uVar2 = (uint16_t)((uint32_t)iVar4 >> 0x10);
+    gploc_A8 =
+         CONCAT22(uVar2,(uint16_t)((int)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar3 < 0)) <<
+         0x10 | (uint32_t)uVar2;
+    if (iVar4 < 0) {
+      gploc_A8 = gploc_A8 + 1;
+    }
+  }
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -1471,10 +1938,66 @@ gpo_loc_100B:         # E10\n \
     popa    \n \
 " : : : "memory", "cc");
 #endif
+#endif
 }
 
 void draw_gpoly_sub3b()
 {
+#ifdef C_DRAW_GPOLY_SUB3B
+  int64_t lVar1;
+  int iVar2;
+  uint16_t uVar3;
+  int iVar4;
+  
+  if (factor_chk < 0) {
+    iVar4 = gploc_pt_cy - gploc_pt_ay;
+    if (iVar4 < 0x100) {
+      iVar4 = *(int32_t *)(iVar4 * 4 + 0x40);
+    }
+    else {
+      iVar4 = (int)(0x7fffffff / (int64_t)iVar4);
+    }
+    iVar2 = (gploc_140 - gploc_170) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar4;
+    uVar3 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    gploc_point_c = CONCAT22(uVar3,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar3;
+    if (iVar2 < 0) {
+      gploc_point_c = gploc_point_c + 1;
+    }
+  }
+  else {
+    iVar4 = gploc_pt_by - gploc_pt_ay;
+    if (iVar4 < 0x100) {
+      iVar4 = *(int32_t *)(iVar4 * 4 + 0x40);
+    }
+    else {
+      iVar4 = (int)(0x7fffffff / (int64_t)iVar4);
+    }
+    iVar2 = (gploc_158 - gploc_170) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar4;
+    uVar3 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    gploc_point_c = CONCAT22(uVar3,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar3;
+    if (iVar2 < 0) {
+      gploc_point_c = gploc_point_c + 1;
+    }
+    iVar4 = gploc_pt_cy - gploc_pt_by;
+    if (iVar4 < 0x100) {
+      iVar4 = *(int32_t *)(iVar4 * 4 + 0x40);
+    }
+    else {
+      iVar4 = (int)(0x7fffffff / (int64_t)iVar4);
+    }
+    iVar2 = (gploc_140 - gploc_158) * 2;
+    lVar1 = (int64_t)iVar2 * (int64_t)iVar4;
+    uVar3 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    gploc_1A0 = CONCAT22(uVar3,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar3;
+    if (iVar2 < 0) {
+      gploc_1A0 = gploc_1A0 + 1;
+    }
+  }
+  gploc_58 = gploc_170 << 0x10;
+  gploc_4C = gploc_158 << 0x10;
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -1574,10 +2097,168 @@ gpo_loc_10D9:         # EA7\n \
     popa    \n \
 " : : : "memory", "cc");
 #endif
+#endif
 }
 
 void draw_gpoly_sub4()
 {
+#ifdef C_DRAW_GPOLY_SUB4
+  int64_t lVar1;
+  int32_t iVar2;
+  uint16_t uVar3;
+  int32_t iVar4;
+  int32_t iVar5;
+  bool bVar6;
+  
+  iVar4 = gploc_pt_cy - gploc_pt_ay;
+  iVar5 = iVar4 * (gploc_pt_bx - gploc_pt_ax);
+  if (-1 < factor_chk) {
+    iVar5 = (iVar5 - iVar4) - iVar4;
+  }
+  iVar4 = (gploc_pt_by - gploc_pt_ay) * (gploc_pt_cx - gploc_pt_ax) - (iVar5 + iVar4);
+  if (iVar4 == 0) {
+    gploc_B0 = 0;
+    gploc_AC = 0;
+  }
+  else {
+    iVar4 = (int32_t)(0x7fffffff / (int64_t)iVar4);
+    lVar1 = (int64_t)iVar4 *
+            (int64_t)
+            (int32_t)((gploc_13C - gploc_16C) * (gploc_pt_by - gploc_pt_ay) -
+                 (gploc_154 - gploc_16C) * (gploc_pt_cy - gploc_pt_ay));
+    iVar5 = (int32_t)lVar1;
+    iVar2 = iVar5 << 1;
+    uVar3 = (uint16_t)((uint32_t)iVar2 >> 0x10);
+    gploc_B0 =
+         CONCAT22(uVar3,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar5 < 0)) <<
+         0x10 | (uint32_t)uVar3;
+    if (iVar2 < 0) {
+      gploc_B0 = gploc_B0 + 1;
+    }
+    lVar1 = (int64_t)iVar4 *
+            (int64_t)
+            (int32_t)((gploc_138 - gploc_168) * (gploc_pt_by - gploc_pt_ay) -
+                 (gploc_150 - gploc_168) * (gploc_pt_cy - gploc_pt_ay));
+    iVar4 = (int32_t)lVar1;
+    iVar5 = iVar4 << 1;
+    uVar3 = (uint16_t)((uint32_t)iVar5 >> 0x10);
+    gploc_AC =
+         CONCAT22(uVar3,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar4 < 0)) <<
+         0x10 | (uint32_t)uVar3;
+    if (iVar5 < 0) {
+      gploc_AC = gploc_AC + 1;
+    }
+  }
+  if (factor_chk < 0) {
+    iVar4 = gploc_pt_cy - gploc_pt_ay;
+    if (iVar4 < 0x100) {
+      iVar4 = *(int32_t *)(iVar4 * 4 + 0x40);
+    }
+    else {
+      iVar4 = (int32_t)(0x7fffffff / (int64_t)iVar4);
+    }
+    iVar5 = (gploc_13C - gploc_16C) * 2;
+    lVar1 = (int64_t)iVar5 * (int64_t)iVar4;
+    uVar3 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    gploc_194 = CONCAT22(uVar3,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar3;
+    if (iVar5 < 0) {
+      gploc_194 = gploc_194 + 1;
+    }
+    iVar5 = (gploc_138 - gploc_168) * 2;
+    lVar1 = (int64_t)iVar5 * (int64_t)iVar4;
+    uVar3 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    gploc_188 = CONCAT22(uVar3,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar3;
+    if (iVar5 < 0) {
+      gploc_188 = gploc_188 + 1;
+    }
+  }
+  else {
+    iVar4 = gploc_pt_by - gploc_pt_ay;
+    if (iVar4 < 0x100) {
+      iVar4 = *(int32_t *)(iVar4 * 4 + 0x40);
+    }
+    else {
+      iVar4 = (int32_t)(0x7fffffff / (int64_t)iVar4);
+    }
+    iVar5 = (gploc_154 - gploc_16C) * 2;
+    lVar1 = (int64_t)iVar5 * (int64_t)iVar4;
+    uVar3 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    gploc_194 = CONCAT22(uVar3,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar3;
+    if (iVar5 < 0) {
+      gploc_194 = gploc_194 + 1;
+    }
+    iVar5 = (gploc_150 - gploc_168) * 2;
+    lVar1 = (int64_t)iVar5 * (int64_t)iVar4;
+    uVar3 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    gploc_188 = CONCAT22(uVar3,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar3;
+    if (iVar5 < 0) {
+      gploc_188 = gploc_188 + 1;
+    }
+    iVar4 = gploc_pt_cy - gploc_pt_by;
+    if (iVar4 < 0x100) {
+      iVar4 = *(int32_t *)(iVar4 * 4 + 0x40);
+    }
+    else {
+      iVar4 = (int32_t)(0x7fffffff / (int64_t)iVar4);
+    }
+    iVar5 = (gploc_13C - gploc_154) * 2;
+    lVar1 = (int64_t)iVar5 * (int64_t)iVar4;
+    uVar3 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    gploc_198 = CONCAT22(uVar3,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar3;
+    if (iVar5 < 0) {
+      gploc_198 = gploc_198 + 1;
+    }
+    iVar5 = (gploc_138 - gploc_150) * 2;
+    lVar1 = (int64_t)iVar5 * (int64_t)iVar4;
+    uVar3 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+    gploc_18C = CONCAT22(uVar3,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar3;
+    if (iVar5 < 0) {
+      gploc_18C = gploc_18C + 1;
+    }
+  }
+  gploc_54 = gploc_16C << 0x10;
+  gploc_50 = gploc_168 << 0x10;
+  gploc_48 = gploc_154 << 0x10;
+  gploc_44 = gploc_150 << 0x10;
+  gploc_BC = gploc_B0 << 0x10;
+  gploc_B4 = (int32_t)gploc_AC >> 0x10;
+  gploc_B8 = (int8_t)(gploc_B0 >> 0x10);
+  gploc_B8 = CONCAT31((int32_t)((gploc_AC << 0x10) >> 8),gploc_B8);
+  if ((int8_t)gploc_B8 < '\0') {
+    bVar6 = gploc_B8 < 0x100;
+    gploc_B8 = gploc_B8 - 0x100;
+    gploc_B4 =
+         CONCAT31((int32_t)(int8_t)(gploc_AC >> 0x18),(int8_t)(gploc_AC >> 0x10) - bVar6);
+  }
+  gploc_A4 = gploc_194 << 0x10;
+  gploc_9C = (int32_t)gploc_188 >> 0x10;
+  gploc_A0 = (int8_t)(gploc_194 >> 0x10);
+  gploc_A0 = CONCAT31((int32_t)((gploc_188 << 0x10) >> 8),gploc_A0);
+  if ((int8_t)gploc_A0 < '\0') {
+    bVar6 = gploc_A0 < 0x100;
+    gploc_A0 = gploc_A0 - 0x100;
+    gploc_9C =
+         CONCAT31((int32_t)(int8_t)(gploc_188 >> 0x18),(int8_t)(gploc_188 >> 0x10) - bVar6);
+  }
+  gploc_8C = 0;
+  gploc_88 = gploc_16C & 0xff;
+  gploc_84 = (gploc_168 & 0xff) << 8;
+  if (-1 < factor_chk) {
+    gploc_98 = gploc_198 << 0x10;
+    gploc_90 = (int32_t)gploc_18C >> 0x10;
+    gploc_94 = (int8_t)(gploc_198 >> 0x10);
+    gploc_94 = CONCAT31((int32_t)((gploc_18C << 0x10) >> 8),gploc_94);
+    if ((int8_t)gploc_94 < '\0') {
+      bVar6 = gploc_94 < 0x100;
+      gploc_94 = gploc_94 - 0x100;
+      gploc_90 =
+           CONCAT31((int32_t)(int8_t)(gploc_18C >> 0x18),(int8_t)(gploc_18C >> 0x10) - bVar6);
+    }
+    gploc_80 = 0;
+    gploc_78 = (gploc_150 & 0xff) << 8;
+    gploc_7C = gploc_154 & 0xff;
+  }
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -1896,10 +2577,154 @@ gpo_loc_1484:         # 120A\n \
     popa    \n \
 " : : : "memory", "cc");
 #endif
+#endif
 }
 
 void draw_gpoly_sub5()
 {
+#ifdef C_DRAW_GPOLY_SUB5
+  int64_t lVar1;
+  int32_t iVar2;
+  uint16_t uVar4;
+  uint32_t uVar3;
+  int32_t iVar5;
+  int32_t iVar6;
+  
+  iVar5 = gploc_pt_cy - gploc_pt_ay;
+  iVar6 = iVar5 * (gploc_pt_bx - gploc_pt_ax);
+  if (-1 < factor_chk) {
+     iVar6 = (iVar6 - iVar5) - iVar5;
+  }
+  iVar5 = (gploc_pt_by - gploc_pt_ay) * (gploc_pt_cx - gploc_pt_ax) - (iVar6 + iVar5);
+  if (iVar5 == 0) {
+     gploc_B0 = 0;
+     gploc_AC = 0;
+  }
+  else {
+     iVar5 = (int32_t)(0x7fffffff / (int64_t)iVar5);
+     lVar1 = (int64_t)iVar5 *
+                 (int64_t)
+                 ((gploc_13C - gploc_16C) * (gploc_pt_by - gploc_pt_ay) -
+                 (gploc_154 - gploc_16C) * (gploc_pt_cy - gploc_pt_ay));
+     iVar6 = (int32_t)lVar1;
+     iVar2 = iVar6 << 1;
+     uVar4 = (uint16_t)((uint32_t)iVar2 >> 0x10);
+     gploc_B0 =
+            CONCAT22(uVar4,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar6 < 0)) <<
+            0x10 | (uint32_t)uVar4;
+     if (iVar2 < 0) {
+        gploc_B0 = gploc_B0 + 1;
+     }
+     lVar1 = (int64_t)iVar5 *
+                 (int64_t)
+                 (int32_t)((gploc_138 - gploc_168) * (gploc_pt_by - gploc_pt_ay) -
+                        (gploc_150 - gploc_168) * (gploc_pt_cy - gploc_pt_ay));
+     iVar5 = (int32_t)lVar1;
+     iVar6 = iVar5 << 1;
+     uVar4 = (uint16_t)((uint32_t)iVar6 >> 0x10);
+     gploc_AC =
+            CONCAT22(uVar4,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar5 < 0)) <<
+            0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_AC = gploc_AC + 1;
+     }
+  }
+  if (factor_chk < 0) {
+     iVar5 = gploc_pt_cy - gploc_pt_ay;
+     if (iVar5 < 0x100) {
+        iVar5 = *(int32_t *)(iVar5 * 4 + 0x40);
+     }
+     else {
+        iVar5 = (int32_t)(0x7fffffff / (int64_t)iVar5);
+     }
+     iVar6 = (gploc_13C - gploc_16C) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_194 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_194 = gploc_194 + 1;
+     }
+     iVar6 = (gploc_138 - gploc_168) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_188 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_188 = gploc_188 + 1;
+     }
+  }
+  else {
+     iVar5 = gploc_pt_by - gploc_pt_ay;
+     if (iVar5 < 0x100) {
+        iVar5 = *(int32_t *)(iVar5 * 4 + 0x40);
+     }
+     else {
+        iVar5 = (int32_t)(0x7fffffff / (int64_t)iVar5);
+     }
+     iVar6 = (gploc_154 - gploc_16C) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_194 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_194 = gploc_194 + 1;
+     }
+     iVar6 = (gploc_150 - gploc_168) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_188 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_188 = gploc_188 + 1;
+     }
+     iVar5 = gploc_pt_cy - gploc_pt_by;
+     if (iVar5 < 0x100) {
+        iVar5 = *(int32_t *)(iVar5 * 4 + 0x40);
+     }
+     else {
+        iVar5 = (int32_t)(0x7fffffff / (int64_t)iVar5);
+     }
+     iVar6 = (gploc_13C - gploc_154) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_198 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_198 = gploc_198 + 1;
+     }
+     iVar6 = (gploc_138 - gploc_150) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_18C = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_18C = gploc_18C + 1;
+     }
+  }
+  gploc_54 = gploc_16C << 0x10;
+  gploc_50 = gploc_168 << 0x10;
+  gploc_48 = gploc_154 << 0x10;
+  gploc_44 = gploc_150 << 0x10;
+  gploc_BC = gploc_AC << 0x10;
+  uVar3 = gploc_B0;
+  if ((int32_t)gploc_AC < 0) {
+     uVar3 = gploc_B0 - 1;
+  }
+  gploc_B8 = gploc_AC >> 0x10 & 0xff | uVar3 << 8;
+  gploc_A4 = gploc_188 << 0x10;
+  uVar3 = gploc_194;
+  if ((int32_t)gploc_188 < 0) {
+     uVar3 = gploc_194 - 1;
+  }
+  gploc_A0 = gploc_188 >> 0x10 & 0xff | uVar3 << 8;
+  gploc_8C = 0;
+  gploc_88 = gploc_168 & 0xff | gploc_16C << 0x18;
+  if (-1 < factor_chk) {
+     gploc_98 = gploc_18C << 0x10;
+     uVar3 = gploc_198;
+     if ((int32_t)gploc_18C < 0) {
+        uVar3 = gploc_198 - 1;
+     }
+     gploc_94 = gploc_18C >> 0x10 & 0xff | uVar3 << 8;
+     gploc_80 = 0;
+     gploc_7C = gploc_150 & 0xff | gploc_154 << 0x18;
+  }
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -2198,10 +3023,242 @@ gpo_loc_17A3:         # 155\n \
     popa    \n \
 " : : : "memory", "cc");
 #endif
+#endif
 }
 
 void draw_gpoly_sub6()
 {
+#ifdef C_DRAW_GPOLY_SUB6
+  int64_t lVar1;
+  int8_t cVar2;
+  int32_t iVar3;
+  uint16_t uVar4;
+  int32_t iVar5;
+  int32_t iVar6;
+  int8_t cVar7;
+  int8_t cVar8;
+  int8_t cVar9;
+  int32_t iVar10;
+  int32_t iVar11;
+  bool bVar12;
+  
+  iVar5 = gploc_pt_cy - gploc_pt_ay;
+  iVar6 = iVar5 * (gploc_pt_bx - gploc_pt_ax);
+  if (-1 < factor_chk) {
+     iVar6 = (iVar6 - iVar5) - iVar5;
+  }
+  iVar5 = (gploc_pt_by - gploc_pt_ay) * (gploc_pt_cx - gploc_pt_ax) - (iVar6 + iVar5);
+  if (iVar5 == 0) {
+     gploc_A8 = 0;
+     gploc_B0 = 0;
+     gploc_AC = 0;
+  }
+  else {
+     iVar5 = (int32_t)(0x7fffffff / (int64_t)iVar5);
+     iVar10 = gploc_pt_cy - gploc_pt_ay;
+     iVar11 = gploc_pt_by - gploc_pt_ay;
+     lVar1 = (int64_t)iVar5 *
+                 (int64_t)
+                 ((gploc_140 - gploc_170) * iVar11 - (gploc_158 - gploc_170) * iVar10);
+     iVar6 = (int32_t)lVar1;
+     iVar3 = iVar6 << 1;
+     uVar4 = (uint16_t)((uint32_t)iVar3 >> 0x10);
+     gploc_A8 =
+            CONCAT22(uVar4,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar6 < 0)) <<
+            0x10 | (uint32_t)uVar4;
+     if (iVar3 < 0) {
+        gploc_A8 = gploc_A8 + 1;
+     }
+     lVar1 = (int64_t)iVar5 *
+                 (int64_t)
+                 (int32_t)((gploc_13C - gploc_16C) * iVar11 -
+                        (gploc_154 - gploc_16C) * iVar10);
+     iVar6 = (int32_t)lVar1;
+     iVar3 = iVar6 << 1;
+     uVar4 = (uint16_t)((uint32_t)iVar3 >> 0x10);
+     gploc_B0 =
+            CONCAT22(uVar4,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar6 < 0)) <<
+            0x10 | (uint32_t)uVar4;
+     if (iVar3 < 0) {
+        gploc_B0 = gploc_B0 + 1;
+     }
+     lVar1 = (int64_t)iVar5 *
+                 (int64_t)
+                 (int32_t)((gploc_138 - gploc_168) * iVar11 -
+                        (gploc_150 - gploc_168) * iVar10);
+     iVar5 = (int32_t)lVar1;
+     iVar6 = iVar5 << 1;
+     uVar4 = (uint16_t)((uint32_t)iVar6 >> 0x10);
+     gploc_AC =
+            CONCAT22(uVar4,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar5 < 0)) <<
+            0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_AC = gploc_AC + 1;
+     }
+  }
+  if (factor_chk < 0) {
+     iVar5 = gploc_pt_cy - gploc_pt_ay;
+     if (iVar5 < 0x100) {
+        iVar5 = *(int32_t *)(iVar5 * 4 + 0x40);
+     }
+     else {
+        iVar5 = (int32_t)(0x7fffffff / (int64_t)iVar5);
+     }
+     iVar6 = (gploc_140 - gploc_170) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_point_c = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_point_c = gploc_point_c + 1;
+     }
+     iVar6 = (gploc_13C - gploc_16C) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_194 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_194 = gploc_194 + 1;
+     }
+     iVar6 = (gploc_138 - gploc_168) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_188 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_188 = gploc_188 + 1;
+     }
+  }
+  else {
+     iVar5 = gploc_pt_by - gploc_pt_ay;
+     if (iVar5 < 0x100) {
+        iVar5 = *(int32_t *)(iVar5 * 4 + 0x40);
+     }
+     else {
+        iVar5 = (int32_t)(0x7fffffff / (int64_t)iVar5);
+     }
+     iVar6 = (gploc_158 - gploc_170) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_point_c = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_point_c = gploc_point_c + 1;
+     }
+     iVar6 = (gploc_154 - gploc_16C) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_194 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_194 = gploc_194 + 1;
+     }
+     iVar6 = (gploc_150 - gploc_168) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_188 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_188 = gploc_188 + 1;
+     }
+     iVar5 = gploc_pt_cy - gploc_pt_by;
+     if (iVar5 < 0x100) {
+        iVar5 = *(int32_t *)(iVar5 * 4 + 0x40);
+     }
+     else {
+        iVar5 = (int32_t)(0x7fffffff / (int64_t)iVar5);
+     }
+     iVar6 = (gploc_140 - gploc_158) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_1A0 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_1A0 = gploc_1A0 + 1;
+     }
+     iVar6 = (gploc_13C - gploc_154) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_198 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_198 = gploc_198 + 1;
+     }
+     iVar6 = (gploc_138 - gploc_150) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_18C = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_18C = gploc_18C + 1;
+     }
+  }
+  gploc_58 = gploc_170 << 0x10;
+  gploc_54 = gploc_16C << 0x10;
+  gploc_50 = gploc_168 << 0x10;
+  gploc_4C = gploc_158 << 0x10;
+  gploc_48 = gploc_154 << 0x10;
+  gploc_44 = gploc_150 << 0x10;
+  cVar9 = (int8_t)(gploc_B0 >> 0x10);
+  gploc_BC = CONCAT22((int16_t)gploc_B0,gploc_word03);
+  cVar7 = cVar9;
+  if (gploc_word03 < 0) {
+     bVar12 = gploc_BC < 0x10000;
+     gploc_BC = gploc_BC - 0x10000;
+     cVar7 = cVar9 - bVar12;
+  }
+  gploc_28 = (int32_t)gploc_AC >> 0x10;
+  gploc_B8 = CONCAT31((int32_t)((gploc_AC << 0x10) >> 8),cVar7);
+  cVar8 = (int8_t)(gploc_AC >> 0x10);
+  cVar2 = (int8_t)(gploc_AC >> 0x18);
+  gploc_B4 = gploc_28;
+  if (cVar7 < '\0') {
+     bVar12 = gploc_B8 < 0x100;
+     gploc_B8 = gploc_B8 - 0x100;
+     gploc_B4 = CONCAT31((int32_t)cVar2,cVar8 - bVar12);
+  }
+  gploc_5C = CONCAT22((int16_t)gploc_B0,gploc_word03);
+  if (gploc_word03 < 0) {
+     bVar12 = gploc_5C < 0xffff;
+     gploc_5C = gploc_5C - 0xffff;
+     cVar9 = cVar9 - bVar12;
+  }
+  gploc_2C = CONCAT31((int32_t)((gploc_AC << 0x10) >> 8),cVar9);
+  if (cVar9 < '\0') {
+     bVar12 = gploc_2C < 0x100;
+     gploc_2C = gploc_2C - 0x100;
+     gploc_28 = CONCAT31((int32_t)cVar2,cVar8 - bVar12);
+  }
+  cVar7 = (int8_t)(gploc_194 >> 0x10);
+  gploc_A4 = CONCAT22((int16_t)gploc_194,gploc_word01);
+  if (gploc_word01 < 0) {
+     bVar12 = gploc_A4 < 0x10000;
+     gploc_A4 = gploc_A4 - 0x10000;
+     cVar7 = cVar7 - bVar12;
+  }
+  gploc_9C = (int32_t)gploc_188 >> 0x10;
+  gploc_A0 = CONCAT31((int32_t)((gploc_188 << 0x10) >> 8),cVar7);
+  if (cVar7 < '\0') {
+     bVar12 = gploc_A0 < 0x100;
+     gploc_A0 = gploc_A0 - 0x100;
+     gploc_9C =
+            CONCAT31((int32_t)(int8_t)(gploc_188 >> 0x18),(int8_t)(gploc_188 >> 0x10) - bVar12);
+  }
+  gploc_8C = (uint32_t)(gploc_170 << 0x10) >> 8 & 0xffff;
+  gploc_88 = gploc_16C & 0xff;
+  gploc_84 = (gploc_168 & 0xff) << 8;
+  if (-1 < factor_chk) {
+     cVar7 = (int8_t)(gploc_198 >> 0x10);
+     gploc_98 = CONCAT22((int16_t)gploc_198,gploc_word02);
+     if (gploc_word02 < 0) {
+        bVar12 = gploc_98 < 0x10000;
+        gploc_98 = gploc_98 - 0x10000;
+        cVar7 = cVar7 - bVar12;
+     }
+     gploc_90 = (int32_t)gploc_18C >> 0x10;
+     gploc_94 = CONCAT31((int32_t)((gploc_18C << 0x10) >> 8),cVar7);
+     if (cVar7 < '\0') {
+        bVar12 = gploc_94 < 0x100;
+        gploc_94 = gploc_94 - 0x100;
+        gploc_90 =
+               CONCAT31((int32_t)(int8_t)(gploc_18C >> 0x18),(int8_t)(gploc_18C >> 0x10) - bVar12);
+     }
+     gploc_80 = (uint32_t)(gploc_158 << 0x10) >> 8 & 0xffff;
+     gploc_7C = gploc_154 & 0xff;
+     gploc_78 = (gploc_150 & 0xff) << 8;
+  }
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -2636,10 +3693,246 @@ gpo_loc_1CAA:\n \
     popa    \n \
 " : : : "memory", "cc");
 #endif
+#endif
 }
 
 void draw_gpoly_sub7()
 {
+#ifdef C_DRAW_GPOLY_SUB7
+  int64_t lVar1;
+  int32_t iVar2;
+  uint16_t uVar4;
+  uint32_t uVar3;
+  int32_t iVar5;
+  int32_t iVar6;
+  uint32_t uVar7;
+  uint32_t uVar8;
+  uint32_t uVar9;
+  int32_t iVar10;
+  int32_t iVar11;
+  bool bVar12;
+  
+  iVar5 = gploc_pt_cy - gploc_pt_ay;
+  iVar6 = iVar5 * (gploc_pt_bx - gploc_pt_ax);
+  if (-1 < factor_chk) {
+     iVar6 = (iVar6 - iVar5) - iVar5;
+  }
+  iVar5 = (gploc_pt_by - gploc_pt_ay) * (gploc_pt_cx - gploc_pt_ax) - (iVar6 + iVar5);
+  if (iVar5 == 0) {
+     gploc_A8 = 0;
+     gploc_B0 = 0;
+     gploc_AC = 0;
+  }
+  else {
+     iVar5 = (int32_t)(0x7fffffff / (int64_t)iVar5);
+     iVar10 = gploc_pt_cy - gploc_pt_ay;
+     iVar11 = gploc_pt_by - gploc_pt_ay;
+     lVar1 = (int64_t)iVar5 *
+                 (int64_t)
+                 ((gploc_140 - gploc_170) * iVar11 - (gploc_158 - gploc_170) * iVar10);
+     iVar6 = (int32_t)lVar1;
+     iVar2 = iVar6 << 1;
+     uVar4 = (uint16_t)((uint32_t)iVar2 >> 0x10);
+     gploc_A8 =
+            CONCAT22(uVar4,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar6 < 0)) <<
+            0x10 | (uint32_t)uVar4;
+     if (iVar2 < 0) {
+        gploc_A8 = gploc_A8 + 1;
+     }
+     lVar1 = (int64_t)iVar5 *
+                 (int64_t)
+                 ((gploc_13C - gploc_16C) * iVar11 - (gploc_154 - gploc_16C) * iVar10);
+     iVar6 = (int32_t)lVar1;
+     iVar2 = iVar6 << 1;
+     uVar4 = (uint16_t)((uint32_t)iVar2 >> 0x10);
+     gploc_B0 =
+            CONCAT22(uVar4,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar6 < 0)) <<
+            0x10 | (uint32_t)uVar4;
+     if (iVar2 < 0) {
+        gploc_B0 = gploc_B0 + 1;
+     }
+     lVar1 = (int64_t)iVar5 *
+                 (int64_t)
+                 (int32_t)((gploc_138 - gploc_168) * iVar11 -
+                        (gploc_150 - gploc_168) * iVar10);
+     iVar5 = (int32_t)lVar1;
+     iVar6 = iVar5 << 1;
+     uVar4 = (uint16_t)((uint32_t)iVar6 >> 0x10);
+     gploc_AC =
+            CONCAT22(uVar4,(uint16_t)((int32_t)((uint64_t)lVar1 >> 0x20) << 1) | (uint16_t)(iVar5 < 0)) <<
+            0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_AC = gploc_AC + 1;
+     }
+  }
+  if (factor_chk < 0) {
+     iVar5 = gploc_pt_cy - gploc_pt_ay;
+     if (iVar5 < 0x100) {
+        iVar5 = *(int32_t *)(iVar5 * 4 + 0x40);
+     }
+     else {
+        iVar5 = (int32_t)(0x7fffffff / (int64_t)iVar5);
+     }
+     iVar6 = (gploc_140 - gploc_170) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_point_c = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_point_c = gploc_point_c + 1;
+     }
+     iVar6 = (gploc_13C - gploc_16C) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_194 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_194 = gploc_194 + 1;
+     }
+     iVar6 = (gploc_138 - gploc_168) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_188 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_188 = gploc_188 + 1;
+     }
+  }
+  else {
+     iVar5 = gploc_pt_by - gploc_pt_ay;
+     if (iVar5 < 0x100) {
+        iVar5 = *(int32_t *)(iVar5 * 4 + 0x40);
+     }
+     else {
+        iVar5 = (int32_t)(0x7fffffff / (int64_t)iVar5);
+     }
+     iVar6 = (gploc_158 - gploc_170) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_point_c = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_point_c = gploc_point_c + 1;
+     }
+     iVar6 = (gploc_154 - gploc_16C) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_194 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_194 = gploc_194 + 1;
+     }
+     iVar6 = (gploc_150 - gploc_168) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_188 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_188 = gploc_188 + 1;
+     }
+     iVar5 = gploc_pt_cy - gploc_pt_by;
+     if (iVar5 < 0x100) {
+        iVar5 = *(int32_t *)(iVar5 * 4 + 0x40);
+     }
+     else {
+        iVar5 = (int32_t)(0x7fffffff / (int64_t)iVar5);
+     }
+     iVar6 = (gploc_140 - gploc_158) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_1A0 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_1A0 = gploc_1A0 + 1;
+     }
+     iVar6 = (gploc_13C - gploc_154) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_198 = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_198 = gploc_198 + 1;
+     }
+     iVar6 = (gploc_138 - gploc_150) * 2;
+     lVar1 = (int64_t)iVar6 * (int64_t)iVar5;
+     uVar4 = (uint16_t)((uint64_t)lVar1 >> 0x10);
+     gploc_18C = CONCAT22(uVar4,(int16_t)((uint64_t)lVar1 >> 0x20)) << 0x10 | (uint32_t)uVar4;
+     if (iVar6 < 0) {
+        gploc_18C = gploc_18C + 1;
+     }
+  }
+  gploc_58 = gploc_170 << 0x10;
+  gploc_54 = gploc_16C << 0x10;
+  gploc_50 = gploc_168 << 0x10;
+  gploc_4C = gploc_158 << 0x10;
+  gploc_48 = gploc_154 << 0x10;
+  gploc_44 = gploc_150 << 0x10;
+  uVar3 = gploc_AC * 0x10000;
+  iVar6 = (int32_t)gploc_AC >> 0x10;
+  gploc_30 = gploc_A8 << 0x18;
+  uVar8 = (int32_t)gploc_A8 >> 8;
+  iVar5 = iVar6;
+  uVar9 = uVar8;
+  if ((int32_t)uVar8 < 0) {
+     uVar9 = uVar8 & 0xffff;
+     bVar12 = uVar3 < 0x10000;
+     uVar3 = uVar3 - 0x10000;
+     iVar5 = iVar6 - (uint32_t)bVar12;
+  }
+  uVar7 = iVar5 + (uint32_t)CARRY4(uVar3,uVar9);
+  gploc_BC = uVar3 + uVar9;
+  uVar9 = gploc_B0;
+  if ((int32_t)uVar7 < 0) {
+     uVar9 = gploc_B0 - 1;
+  }
+  gploc_B8 = uVar7 & 0xff | uVar9 << 8;
+  uVar9 = gploc_AC * 0x10000;
+  if ((int32_t)uVar8 < 0) {
+     uVar8 = uVar8 & 0xffff;
+     bVar12 = uVar9 < 0xffff;
+     uVar9 = uVar9 - 0xffff;
+     iVar6 = iVar6 - (uint32_t)bVar12;
+  }
+  uVar3 = iVar6 + (uint32_t)CARRY4(uVar9,uVar8);
+  gploc_5C = uVar9 + uVar8;
+  uVar9 = gploc_B0;
+  if ((int32_t)uVar3 < 0) {
+     uVar9 = gploc_B0 - 1;
+  }
+  gploc_2C = uVar3 & 0xff | uVar9 << 8;
+  uVar9 = gploc_188 * 0x10000;
+  iVar5 = (int32_t)gploc_188 >> 0x10;
+  gploc_68 = gploc_point_c->X << 0x18;
+  uVar3 = (int32_t)gploc_point_c >> 8;
+  if ((int32_t)uVar3 < 0) {
+     uVar3 = uVar3 & 0xffff;
+     bVar12 = uVar9 < 0x10000;
+     uVar9 = uVar9 - 0x10000;
+     iVar5 = iVar5 - (uint32_t)bVar12;
+  }
+  uVar8 = iVar5 + (uint32_t)CARRY4(uVar9,uVar3);
+  gploc_A4 = uVar9 + uVar3;
+  uVar9 = gploc_194;
+  if ((int32_t)uVar8 < 0) {
+     uVar9 = gploc_194 - 1;
+  }
+  gploc_A0 = uVar8 & 0xff | uVar9 << 8;
+  gploc_8C = (uint32_t)(gploc_170 << 0x10) >> 8;
+  gploc_88 = gploc_168 & 0xff | gploc_16C << 0x18;
+  if (-1 < factor_chk) {
+     uVar9 = gploc_18C * 0x10000;
+     iVar5 = (int32_t)gploc_18C >> 0x10;
+     gploc_64 = gploc_1A0 << 0x18;
+     uVar3 = (int32_t)gploc_1A0 >> 8;
+     if ((int32_t)uVar3 < 0) {
+        uVar3 = uVar3 & 0xffff;
+        bVar12 = uVar9 < 0x10000;
+        uVar9 = uVar9 - 0x10000;
+        iVar5 = iVar5 - (uint32_t)bVar12;
+     }
+     gploc_98 = uVar9 + uVar3;
+     uVar3 = iVar5 + (uint32_t)CARRY4(uVar9,uVar3);
+     uVar9 = gploc_198;
+     if ((int32_t)uVar3 < 0) {
+        uVar9 = gploc_198 - 1;
+     }
+     gploc_94 = uVar3 & 0xff | uVar9 << 8;
+     gploc_80 = (uint32_t)(gploc_158 << 0x10) >> 8;
+     gploc_7C = gploc_150 & 0xff | gploc_154 << 0x18;
+  }
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -3071,10 +4364,230 @@ gpo_case69_break:\n \
     popa    \n \
 " : : : "memory", "cc");
 #endif
+#endif
 }
 
 void draw_gpoly_sub11()
 {
+
+#ifdef C_DRAW_GPOLY_SUB11
+  uint32_t uVar1;
+  uint32_t uVar2;
+  int32_t iVar3;
+  uint32_t uVar4;
+  uint32_t uVar5;
+  undefined4 uVar6;
+  int32_t iVar7;
+  int32_t iVar8;
+  int32_t iVar9;
+  int32_t iVar10;
+  int32_t iVar11;
+  bool bVar12;
+  
+  iVar11 = __LOC_vec_screen_width * gploc_pt_ay + __LOC_vec_screen;
+  if (gploc_pt_ay <= __LOC_vec_window_height) {
+     gploc_C0 = gploc_pt_by;
+     if (__LOC_vec_window_height < gploc_pt_by) {
+        gploc_C0 = __LOC_vec_window_height;
+     }
+     gploc_C0 = gploc_C0 - gploc_pt_ay;
+     gploc_74 = gploc_pt_ax;
+     iVar3 = gploc_pt_shax;
+     uVar4 = gploc_8C;
+     uVar5 = gploc_88;
+     uVar6 = gploc_84;
+     iVar7 = gploc_pt_shax;
+     iVar10 = gploc_pt_ax;
+     iVar8 = gploc_74;
+     if (gploc_C0 == 0) goto loc_782CD8;
+     iVar9 = gploc_pt_ay;
+     if (gploc_pt_ay < 0) goto loc_782C50;
+loc_loop02:
+     do {
+        do {
+           gploc_F4 = iVar11;
+           gploc_F8 = iVar7;
+           gploc_E4 = uVar6;
+           gploc_D8 = uVar5;
+           gploc_E0 = uVar4;
+           gploc_FC = iVar3;
+           iVar11 = iVar3 >> 0x10;
+           if (iVar11 < 0) {
+              iVar8 = gploc_74;
+              if (gploc_74 != 0) {
+                 if (gploc_74 < 0) {
+                    do {
+                      uVar4 = (uint)CARRY1((uint8_t)gploc_E4,DAT_000000dc);
+                      bVar12 = CARRY4(gploc_E0,gploc_BC);
+                      uVar5 = gploc_E0 + gploc_BC;
+                      gploc_E0 = uVar5 + uVar4;
+                      uVar4 = (uint)(bVar12 || CARRY4(uVar5,uVar4));
+                      bVar12 = CARRY4(gploc_D8,gploc_B8);
+                      uVar5 = gploc_D8 + gploc_B8;
+                      gploc_D8 = uVar5 + uVar4;
+                      gploc_E4 =
+                              CONCAT22((short)((uint)gploc_E4 >> 0x10),
+                                          CONCAT11((char)((uint)gploc_E4 >> 8) + DAT_000000cc +
+                                                       (bVar12 || CARRY4(uVar5,uVar4)),
+                                                       (uint8_t)gploc_E4 + DAT_000000dc));
+                      iVar8 = iVar8 + 1;
+                    } while (iVar8 != 0);
+                 }
+                 else {
+                    do {
+                      uVar4 = (uint)((uint8_t)gploc_E4 < DAT_000000dc);
+                      bVar12 = gploc_E0 < gploc_BC;
+                      uVar5 = gploc_E0 - gploc_BC;
+                      gploc_E0 = uVar5 - uVar4;
+                      uVar4 = (uint)(bVar12 || uVar5 < uVar4);
+                      bVar12 = gploc_D8 < gploc_B8;
+                      uVar5 = gploc_D8 - gploc_B8;
+                      gploc_D8 = uVar5 - uVar4;
+                      gploc_E4 =
+                              CONCAT22((short)((uint)gploc_E4 >> 0x10),
+                                          CONCAT11(((char)((uint)gploc_E4 >> 8) - DAT_000000cc) -
+                                                       (bVar12 || uVar5 < uVar4),(uint8_t)gploc_E4 - DAT_000000dc)
+                                         );
+                      iVar8 = iVar8 + -1;
+                    } while (iVar8 != 0);
+                 }
+              }
+           }
+           else if (gploc_74 < iVar11) {
+              do {
+                 uVar4 = (uint)CARRY1((uint8_t)gploc_E4,DAT_000000dc);
+                 bVar12 = CARRY4(gploc_E0,gploc_BC);
+                 uVar5 = gploc_E0 + gploc_BC;
+                 gploc_E0 = uVar5 + uVar4;
+                 uVar4 = (uint)(bVar12 || CARRY4(uVar5,uVar4));
+                 bVar12 = CARRY4(gploc_D8,gploc_B8);
+                 uVar5 = gploc_D8 + gploc_B8;
+                 gploc_D8 = uVar5 + uVar4;
+                 gploc_E4 =
+                        CONCAT22((short)((uint)gploc_E4 >> 0x10),
+                                     CONCAT11((char)((uint)gploc_E4 >> 8) + DAT_000000cc +
+                                                  (bVar12 || CARRY4(uVar5,uVar4)),
+                                                  (uint8_t)gploc_E4 + DAT_000000dc));
+                 gploc_74 = gploc_74 + 1;
+                 iVar8 = gploc_74;
+              } while (gploc_74 < iVar11);
+           }
+           else {
+              for (; iVar8 = gploc_74, iVar11 < gploc_74; gploc_74 = gploc_74 + -1)
+              {
+                 uVar4 = (uint)((uint8_t)gploc_E4 < DAT_000000dc);
+                 bVar12 = gploc_E0 < gploc_BC;
+                 uVar5 = gploc_E0 - gploc_BC;
+                 gploc_E0 = uVar5 - uVar4;
+                 uVar4 = (uint)(bVar12 || uVar5 < uVar4);
+                 bVar12 = gploc_D8 < gploc_B8;
+                 uVar5 = gploc_D8 - gploc_B8;
+                 gploc_D8 = uVar5 - uVar4;
+                 gploc_E4 =
+                        CONCAT22((short)((uint)gploc_E4 >> 0x10),
+                                     CONCAT11(((char)((uint)gploc_E4 >> 8) - DAT_000000cc) -
+                                                  (bVar12 || uVar5 < uVar4),(uint8_t)gploc_E4 - DAT_000000dc));
+              }
+           }
+           gploc_74 = iVar8;
+           iVar7 = gploc_F8 >> 0x10;
+           if (__LOC_vec_window_width < gploc_F8 >> 0x10) {
+              iVar7 = __LOC_vec_window_width;
+           }
+           if (iVar7 - iVar8 != 0 && iVar8 <= iVar7) {
+              gploc_D4 = iVar7 - iVar8;
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+                            /* WARNING (jumptable): Sanity check requires truncation of jumptable */
+                            /* WARNING: Could not find normalized switch variable to match jumptable */
+           }
+           iVar3 = iVar3 + gploc_12C;
+           iVar7 = gploc_F8 + gploc_128;
+           iVar10 = (iVar8 - iVar11) + (iVar3 >> 0x10);
+           uVar5 = (uint)CARRY1((uint8_t)gploc_E4,DAT_0000011c);
+           uVar4 = gploc_E0 + gploc_CC + uVar5;
+           uVar1 = (uint)(CARRY4(gploc_E0,gploc_CC) ||
+                               CARRY4(gploc_E0 + gploc_CC,uVar5));
+           uVar5 = gploc_D8 + gploc_C4 + uVar1;
+           uVar6 = CONCAT22((short)((uint)gploc_E4 >> 0x10),
+                                   CONCAT11((char)((uint)gploc_E4 >> 8) + DAT_000000b8 +
+                                                (CARRY4(gploc_D8,gploc_C4) ||
+                                                CARRY4(gploc_D8 + gploc_C4,uVar1)),
+                                                (uint8_t)gploc_E4 + DAT_0000011c));
+           iVar11 = gploc_F4 + gploc_104;
+           gploc_C0 = gploc_C0 + -1;
+           gploc_74 = iVar10;
+           gploc_FC = iVar3;
+        } while (gploc_C0 != 0);
+loc_782CD8:
+        while( true ) {
+           gploc_74 = iVar8;
+           gploc_180 = gploc_180 + -1;
+           if (gploc_180 == 0) goto locret5a;
+           gploc_FC = iVar3;
+           if (factor_chk < 0) {
+              gploc_128 = factor_cb;
+              iVar8 = gploc_pt_cy;
+              if (__LOC_vec_window_height < gploc_pt_cy) {
+                 iVar8 = __LOC_vec_window_height;
+              }
+              gploc_C0 = iVar8 - gploc_pt_by;
+              iVar7 = gploc_pt_shbx;
+              if (gploc_C0 == 0 || iVar8 < gploc_pt_by) goto locret5a;
+           }
+           else {
+              gploc_12C = factor_cb;
+              gploc_60 = gploc_1A0;
+              gploc_CC = gploc_98;
+              gploc_C4 = gploc_94;
+              gploc_C8 = gploc_90;
+              iVar8 = gploc_pt_cy;
+              if (__LOC_vec_window_height < gploc_pt_cy) {
+                 iVar8 = __LOC_vec_window_height;
+              }
+              gploc_C0 = iVar8 - gploc_pt_by;
+              gploc_74 = gploc_pt_bx;
+              iVar3 = gploc_pt_shbx;
+              uVar4 = gploc_80;
+              uVar5 = gploc_7C;
+              uVar6 = gploc_78;
+              iVar10 = gploc_pt_bx;
+              if (gploc_C0 == 0 || iVar8 < gploc_pt_by) goto locret5a;
+           }
+           gploc_74 = iVar10;
+           iVar9 = gploc_pt_by;
+           if (-1 < gploc_pt_by) break;
+loc_782C50:
+           while( true ) {
+              uVar1 = (uint)CARRY1((uint8_t)uVar6,DAT_0000011c);
+              bVar12 = CARRY4(uVar4,gploc_CC);
+              uVar2 = uVar4 + gploc_CC;
+              uVar4 = uVar2 + uVar1;
+              uVar1 = (uint)(bVar12 || CARRY4(uVar2,uVar1));
+              bVar12 = CARRY4(uVar5,gploc_C4);
+              uVar2 = uVar5 + gploc_C4;
+              uVar5 = uVar2 + uVar1;
+              uVar6 = CONCAT22((short)((uint)uVar6 >> 0x10),
+                                      CONCAT11((char)((uint)uVar6 >> 8) + DAT_000000b8 +
+                                                   (bVar12 || CARRY4(uVar2,uVar1)),(uint8_t)uVar6 + DAT_0000011c));
+              gploc_74 = gploc_74 - (iVar3 >> 0x10);
+              iVar3 = iVar3 + gploc_12C;
+              iVar7 = iVar7 + gploc_128;
+              gploc_74 = gploc_74 + (iVar3 >> 0x10);
+              iVar11 = iVar11 + gploc_104;
+              gploc_C0 = gploc_C0 + -1;
+              iVar10 = gploc_74;
+              gploc_FC = iVar3;
+              iVar8 = gploc_74;
+              if (gploc_C0 == 0) break;
+              iVar9 = iVar9 + 1;
+              if (-1 < iVar9) goto loc_loop02;
+           }
+        }
+     } while( true );
+  }
+
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -3545,10 +5058,151 @@ locret5a:\n \
     popa    \n \
 " : : : "memory", "cc");
 #endif
+#endif
 }
 
 void draw_gpoly_sub12()
 {
+#ifdef C_DRAW_GPOLY_SUB12
+  uint uVar1;
+  uint uVar2;
+  int iVar3;
+  uint uVar4;
+  uint uVar5;
+  undefined4 uVar6;
+  int iVar7;
+  int iVar8;
+  int iVar9;
+  bool bVar10;
+  
+  gploc_104 = __LOC_vec_screen_width;
+  gploc_180 = 2;
+  gploc_60 = gploc_1A4;
+  gploc_CC = gploc_A4;
+  gploc_C4 = gploc_A0;
+  gploc_C8 = gploc_9C;
+  if (factor_chk < 0) {
+     gploc_12C = factor_ca;
+     gploc_128 = factor_ba;
+  }
+  else {
+     gploc_12C = factor_ba;
+     gploc_128 = factor_ca;
+  }
+  iVar9 = __LOC_vec_screen_width * gploc_pt_ay + __LOC_vec_screen;
+  if (__LOC_vec_window_height < gploc_pt_ay) {
+locret5b:
+     return CONCAT44(param_2,param_1);
+  }
+  gploc_C0 = gploc_pt_by;
+  if (__LOC_vec_window_height < gploc_pt_by) {
+     gploc_C0 = __LOC_vec_window_height;
+  }
+  gploc_C0 = gploc_C0 - gploc_pt_ay;
+  gploc_74 = gploc_pt_ax;
+  iVar3 = gploc_pt_shax;
+  uVar4 = gploc_8C;
+  uVar5 = gploc_88;
+  uVar6 = gploc_84;
+  iVar7 = gploc_pt_shax;
+  if (gploc_C0 == 0) goto loc_782618;
+  iVar8 = gploc_pt_ay;
+  if (gploc_pt_ay < 0) goto loc_782590;
+loc_782520:
+  do {
+     do {
+        gploc_F4 = iVar9;
+        gploc_F8 = iVar7;
+        gploc_E4 = uVar6;
+        gploc_D8 = uVar5;
+        gploc_E0 = uVar4;
+        gploc_FC = iVar3;
+        iVar9 = (gploc_F8 >> 0x10) - (gploc_FC >> 0x10);
+        if (iVar9 != 0 && gploc_FC >> 0x10 <= gploc_F8 >> 0x10) {
+           gploc_D4 = iVar9;
+                            /* WARNING: Bad instruction - Truncating control flow here */
+           halt_baddata();
+                            /* WARNING (jumptable): Sanity check requires truncation of jumptable */
+                            /* WARNING: Could not find normalized switch variable to match jumptable */
+        }
+        iVar3 = gploc_FC + gploc_12C;
+        iVar7 = gploc_F8 + gploc_128;
+        uVar5 = (uint)CARRY1((byte)gploc_E4,DAT_0000011c);
+        uVar4 = gploc_E0 + gploc_CC + uVar5;
+        uVar1 = (uint)(CARRY4(gploc_E0,gploc_CC) ||
+                            CARRY4(gploc_E0 + gploc_CC,uVar5));
+        uVar5 = gploc_D8 + gploc_C4 + uVar1;
+        uVar6 = CONCAT22((short)((uint)gploc_E4 >> 0x10),
+                                CONCAT11((char)((uint)gploc_E4 >> 8) + DAT_000000b8 +
+                                             (CARRY4(gploc_D8,gploc_C4) ||
+                                             CARRY4(gploc_D8 + gploc_C4,uVar1)),
+                                             (byte)gploc_E4 + DAT_0000011c));
+        iVar9 = gploc_F4 + __LOC_vec_screen_width;
+        gploc_C0 = gploc_C0 + -1;
+     } while (gploc_C0 != 0);
+loc_782618:
+     while( true ) {
+        gploc_180 = gploc_180 + -1;
+        if (gploc_180 == 0) goto locret5b;
+        gploc_FC = iVar3;
+        if (factor_chk < 0) {
+           gploc_128 = factor_cb;
+           iVar8 = gploc_pt_cy;
+           if (__LOC_vec_window_height < gploc_pt_cy) {
+              iVar8 = __LOC_vec_window_height;
+           }
+           gploc_C0 = iVar8 - gploc_pt_by;
+           iVar7 = gploc_pt_shbx;
+           if (gploc_C0 == 0 || iVar8 < gploc_pt_by) goto locret5b;
+        }
+        else {
+           gploc_12C = factor_cb;
+           gploc_60 = gploc_1A0;
+           gploc_CC = gploc_98;
+           gploc_C4 = gploc_94;
+           gploc_C8 = gploc_90;
+           iVar8 = gploc_pt_cy;
+           if (__LOC_vec_window_height < gploc_pt_cy) {
+              iVar8 = __LOC_vec_window_height;
+           }
+           gploc_C0 = iVar8 - gploc_pt_by;
+           gploc_74 = gploc_pt_bx;
+           iVar3 = gploc_pt_shbx;
+           uVar4 = gploc_80;
+           uVar5 = gploc_7C;
+           uVar6 = gploc_78;
+           if (gploc_C0 == 0 || iVar8 < gploc_pt_by) goto locret5b;
+        }
+        iVar8 = gploc_pt_by;
+        if (-1 < gploc_pt_by) break;
+loc_782590:
+        while( true ) {
+           uVar1 = (uint)CARRY1((byte)uVar6,DAT_0000011c);
+           bVar10 = CARRY4(uVar4,gploc_CC);
+           uVar2 = uVar4 + gploc_CC;
+           uVar4 = uVar2 + uVar1;
+           uVar1 = (uint)(bVar10 || CARRY4(uVar2,uVar1));
+           bVar10 = CARRY4(uVar5,gploc_C4);
+           uVar2 = uVar5 + gploc_C4;
+           uVar5 = uVar2 + uVar1;
+           uVar6 = CONCAT22((short)((uint)uVar6 >> 0x10),
+                                   CONCAT11((char)((uint)uVar6 >> 8) + DAT_000000b8 +
+                                                (bVar10 || CARRY4(uVar2,uVar1)),(byte)uVar6 + DAT_0000011c));
+           gploc_74 = gploc_74 - (iVar3 >> 0x10);
+           iVar3 = iVar3 + gploc_12C;
+           iVar7 = iVar7 + gploc_128;
+           gploc_74 = gploc_74 + (iVar3 >> 0x10);
+           iVar9 = iVar9 + __LOC_vec_screen_width;
+           gploc_C0 = gploc_C0 + -1;
+           gploc_FC = iVar3;
+           if (gploc_C0 == 0) break;
+           iVar8 = iVar8 + 1;
+           if (-1 < iVar8) goto loc_782520;
+        }
+     }
+  } while( true );
+
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -3973,10 +5627,194 @@ locret5b:\n \
     popa    \n \
 " : : : "memory", "cc");
 #endif
+#endif
 }
 
 void draw_gpoly_sub13()
 {
+#ifdef C_DRAW_GPOLY_SUB13
+  uint uVar1;
+  int iVar2;
+  uint uVar3;
+  uint uVar4;
+  int iVar5;
+  int iVar6;
+  int iVar7;
+  int iVar8;
+  int iVar9;
+  int iVar10;
+  bool bVar11;
+  bool bVar12;
+  
+  uVar3 = 0;
+  iVar10 = __LOC_vec_screen_width * gploc_pt_ay + __LOC_vec_screen;
+  if (gploc_pt_ay <= __LOC_vec_window_height) {
+     gploc_C0 = gploc_pt_by;
+     if (__LOC_vec_window_height < gploc_pt_by) {
+        gploc_C0 = __LOC_vec_window_height;
+     }
+     gploc_C0 = gploc_C0 - gploc_pt_ay;
+     gploc_74 = gploc_pt_ax;
+     iVar2 = gploc_pt_shax;
+     uVar4 = gploc_8C;
+     iVar5 = gploc_88;
+     iVar6 = gploc_pt_shax;
+     iVar7 = gploc_pt_ax;
+     iVar8 = gploc_74;
+     if (gploc_C0 == 0) goto loc_783A68;
+     iVar9 = gploc_pt_ay;
+     if (gploc_pt_ay < 0) goto loc_7839E0;
+loc_783899:
+     do {
+        do {
+           gploc_F4 = iVar10;
+           gploc_F8 = iVar6;
+           gploc_E4 = iVar5;
+           gploc_D8 = uVar4;
+           gploc_34 = uVar3;
+           gploc_FC = iVar2;
+           iVar10 = iVar2 >> 0x10;
+           if (iVar10 < 0) {
+              iVar8 = gploc_74;
+              if (gploc_74 != 0) {
+                 if (gploc_74 < 0) {
+                    do {
+                      bVar11 = CARRY4(gploc_34,gploc_30);
+                      gploc_34 = gploc_34 + gploc_30;
+                      bVar12 = CARRY4(gploc_D8,gploc_BC);
+                      uVar3 = gploc_D8 + gploc_BC;
+                      gploc_D8 = uVar3 + bVar11;
+                      gploc_E4 =
+                              gploc_E4 + gploc_B8 + (uint)(bVar12 || CARRY4(uVar3,(uint)bVar11));
+                      iVar8 = iVar8 + 1;
+                    } while (iVar8 != 0);
+                 }
+                 else {
+                    do {
+                      bVar11 = gploc_34 < gploc_30;
+                      gploc_34 = gploc_34 - gploc_30;
+                      bVar12 = gploc_D8 < gploc_BC;
+                      uVar3 = gploc_D8 - gploc_BC;
+                      gploc_D8 = uVar3 - bVar11;
+                      gploc_E4 = (gploc_E4 - gploc_B8) - (uint)(bVar12 || uVar3 < bVar11);
+                      iVar8 = iVar8 + -1;
+                    } while (iVar8 != 0);
+                 }
+              }
+           }
+           else if (gploc_74 < iVar10) {
+              do {
+                 bVar11 = CARRY4(gploc_34,gploc_30);
+                 gploc_34 = gploc_34 + gploc_30;
+                 bVar12 = CARRY4(gploc_D8,gploc_BC);
+                 uVar3 = gploc_D8 + gploc_BC;
+                 gploc_D8 = uVar3 + bVar11;
+                 gploc_E4 =
+                        gploc_E4 + gploc_B8 + (uint)(bVar12 || CARRY4(uVar3,(uint)bVar11));
+                 gploc_74 = gploc_74 + 1;
+                 iVar8 = gploc_74;
+              } while (gploc_74 < iVar10);
+           }
+           else {
+              for (; iVar8 = gploc_74, iVar10 < gploc_74; gploc_74 = gploc_74 + -1)
+              {
+                 bVar11 = gploc_34 < gploc_30;
+                 gploc_34 = gploc_34 - gploc_30;
+                 bVar12 = gploc_D8 < gploc_BC;
+                 uVar3 = gploc_D8 - gploc_BC;
+                 gploc_D8 = uVar3 - bVar11;
+                 gploc_E4 = (gploc_E4 - gploc_B8) - (uint)(bVar12 || uVar3 < bVar11);
+              }
+           }
+           gploc_74 = iVar8;
+           iVar5 = gploc_F8 >> 0x10;
+           if (__LOC_vec_window_width < gploc_F8 >> 0x10) {
+              iVar5 = __LOC_vec_window_width;
+           }
+           if (iVar5 - iVar8 != 0 && iVar8 <= iVar5) {
+              gploc_D4 = iVar5 - iVar8;
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+                            /* WARNING (jumptable): Sanity check requires truncation of jumptable */
+                            /* WARNING: Could not find normalized switch variable to match jumptable */
+           }
+           iVar2 = iVar2 + gploc_12C;
+           iVar6 = gploc_F8 + gploc_128;
+           iVar7 = (iVar8 - iVar10) + (iVar2 >> 0x10);
+           uVar3 = gploc_34 + gploc_60;
+           uVar4 = gploc_D8 + gploc_CC + (uint)CARRY4(gploc_34,gploc_60);
+           iVar5 = gploc_E4 + gploc_C4 +
+                      (uint)(CARRY4(gploc_D8,gploc_CC) ||
+                               CARRY4(gploc_D8 + gploc_CC,(uint)CARRY4(gploc_34,gploc_60)
+                                        ));
+           iVar10 = gploc_F4 + gploc_104;
+           gploc_C0 = gploc_C0 + -1;
+           gploc_74 = iVar7;
+           gploc_FC = iVar2;
+        } while (gploc_C0 != 0);
+loc_783A68:
+        while( true ) {
+           gploc_74 = iVar8;
+           gploc_180 = gploc_180 + -1;
+           if (gploc_180 == 0) goto locret69a;
+           gploc_FC = iVar2;
+           if (factor_chk < 0) {
+              gploc_128 = factor_cb;
+              iVar8 = gploc_pt_cy;
+              if (__LOC_vec_window_height < gploc_pt_cy) {
+                 iVar8 = __LOC_vec_window_height;
+              }
+              gploc_C0 = iVar8 - gploc_pt_by;
+              iVar6 = gploc_pt_shbx;
+              if (gploc_C0 == 0 || iVar8 < gploc_pt_by) goto locret69a;
+           }
+           else {
+              gploc_12C = factor_cb;
+              gploc_60 = gploc_64;
+              gploc_CC = gploc_98;
+              gploc_C4 = gploc_94;
+              uVar3 = 0;
+              iVar8 = gploc_pt_cy;
+              if (__LOC_vec_window_height < gploc_pt_cy) {
+                 iVar8 = __LOC_vec_window_height;
+              }
+              gploc_C0 = iVar8 - gploc_pt_by;
+              gploc_74 = gploc_pt_bx;
+              iVar2 = gploc_pt_shbx;
+              uVar4 = gploc_80;
+              iVar5 = gploc_7C;
+              iVar7 = gploc_pt_bx;
+              if (gploc_C0 == 0 || iVar8 < gploc_pt_by) goto locret69a;
+           }
+           gploc_74 = iVar7;
+           iVar9 = gploc_pt_by;
+           if (-1 < gploc_pt_by) break;
+loc_7839E0:
+           while( true ) {
+              bVar11 = CARRY4(uVar3,gploc_60);
+              uVar3 = uVar3 + gploc_60;
+              bVar12 = CARRY4(uVar4,gploc_CC);
+              uVar1 = uVar4 + gploc_CC;
+              uVar4 = uVar1 + bVar11;
+              iVar5 = iVar5 + gploc_C4 + (uint)(bVar12 || CARRY4(uVar1,(uint)bVar11));
+              gploc_74 = gploc_74 - (iVar2 >> 0x10);
+              iVar2 = iVar2 + gploc_12C;
+              iVar6 = iVar6 + gploc_128;
+              gploc_74 = gploc_74 + (iVar2 >> 0x10);
+              iVar10 = iVar10 + gploc_104;
+              gploc_C0 = gploc_C0 + -1;
+              iVar7 = gploc_74;
+              gploc_FC = iVar2;
+              iVar8 = gploc_74;
+              if (gploc_C0 == 0) break;
+              iVar9 = iVar9 + 1;
+              if (-1 < iVar9) goto loc_783899;
+           }
+        }
+     } while( true );
+  }
+
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -4519,10 +6357,173 @@ locret69a:\n \
     popa    \n \
 " : : : "memory", "cc");
 #endif
+#endif
 }
 
 void draw_gpoly_sub14()
 {
+#ifdef C_DRAW_GPOLY_SUB14
+  uint uVar1;
+  int iVar2;
+  uint uVar3;
+  uint uVar4;
+  int iVar5;
+  int iVar6;
+  int iVar7;
+  int iVar8;
+  bool bVar9;
+  bool bVar10;
+  
+  uVar3 = 0;
+  iVar8 = __LOC_vec_screen_width * gploc_pt_ay + __LOC_vec_screen;
+  if (__LOC_vec_window_height < gploc_pt_ay) {
+locret69b:
+     return CONCAT44(param_2,param_1);
+  }
+  gploc_C0 = gploc_pt_by;
+  if (__LOC_vec_window_height < gploc_pt_by) {
+     gploc_C0 = __LOC_vec_window_height;
+  }
+  gploc_C0 = gploc_C0 - gploc_pt_ay;
+  gploc_74 = gploc_pt_ax;
+  iVar2 = gploc_pt_shax;
+  uVar4 = gploc_8C;
+  iVar5 = gploc_88;
+  iVar6 = gploc_pt_shax;
+  if (gploc_C0 == 0) goto loc_783338;
+  iVar7 = gploc_pt_ay;
+  if (gploc_pt_ay < 0) goto loc_7832B0;
+loc_783239:
+  do {
+     do {
+        gploc_F4 = iVar8;
+        gploc_F8 = iVar6;
+        gploc_E4 = iVar5;
+        gploc_D8 = uVar4;
+        gploc_34 = uVar3;
+        gploc_FC = iVar2;
+        uVar3 = (gploc_F8 >> 0x10) - (gploc_FC >> 0x10);
+        if (uVar3 != 0 && gploc_FC >> 0x10 <= gploc_F8 >> 0x10) {
+           gploc_D4 = uVar3;
+           switch(uVar3 & 0xf) {
+           case 0:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 1:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 2:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 3:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 4:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 5:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 6:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 7:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 8:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 9:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 10:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 0xb:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 0xc:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 0xd:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 0xe:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           case 0xf:
+                            /* WARNING: Bad instruction - Truncating control flow here */
+              halt_baddata();
+           }
+        }
+        iVar2 = gploc_FC + gploc_12C;
+        iVar6 = gploc_F8 + gploc_128;
+        uVar3 = gploc_34 + gploc_60;
+        uVar4 = gploc_D8 + gploc_CC + (uint)CARRY4(gploc_34,gploc_60);
+        iVar5 = gploc_E4 + gploc_C4 +
+                    (uint)(CARRY4(gploc_D8,gploc_CC) ||
+                            CARRY4(gploc_D8 + gploc_CC,(uint)CARRY4(gploc_34,gploc_60)))
+        ;
+        iVar8 = gploc_F4 + gploc_104;
+        gploc_C0 = gploc_C0 + -1;
+     } while (gploc_C0 != 0);
+loc_783338:
+     while( true ) {
+        gploc_180 = gploc_180 + -1;
+        if (gploc_180 == 0) goto locret69b;
+        gploc_FC = iVar2;
+        if (factor_chk < 0) {
+           gploc_128 = factor_cb;
+           iVar7 = gploc_pt_cy;
+           if (__LOC_vec_window_height < gploc_pt_cy) {
+              iVar7 = __LOC_vec_window_height;
+           }
+           gploc_C0 = iVar7 - gploc_pt_by;
+           iVar6 = gploc_pt_shbx;
+           if (gploc_C0 == 0 || iVar7 < gploc_pt_by) goto locret69b;
+        }
+        else {
+           gploc_12C = factor_cb;
+           gploc_60 = gploc_64;
+           gploc_CC = gploc_98;
+           gploc_C4 = gploc_94;
+           uVar3 = 0;
+           iVar7 = gploc_pt_cy;
+           if (__LOC_vec_window_height < gploc_pt_cy) {
+              iVar7 = __LOC_vec_window_height;
+           }
+           gploc_C0 = iVar7 - gploc_pt_by;
+           gploc_74 = gploc_pt_bx;
+           iVar2 = gploc_pt_shbx;
+           uVar4 = gploc_80;
+           iVar5 = gploc_7C;
+           if (gploc_C0 == 0 || iVar7 < gploc_pt_by) goto locret69b;
+        }
+        iVar7 = gploc_pt_by;
+        if (-1 < gploc_pt_by) break;
+loc_7832B0:
+        while( true ) {
+           bVar9 = CARRY4(uVar3,gploc_60);
+           uVar3 = uVar3 + gploc_60;
+           bVar10 = CARRY4(uVar4,gploc_CC);
+           uVar1 = uVar4 + gploc_CC;
+           uVar4 = uVar1 + bVar9;
+           iVar5 = iVar5 + gploc_C4 + (uint)(bVar10 || CARRY4(uVar1,(uint)bVar9));
+           gploc_74 = gploc_74 - (iVar2 >> 0x10);
+           iVar2 = iVar2 + gploc_12C;
+           iVar6 = iVar6 + gploc_128;
+           gploc_74 = gploc_74 + (iVar2 >> 0x10);
+           iVar8 = iVar8 + gploc_104;
+           gploc_C0 = gploc_C0 + -1;
+           gploc_FC = iVar2;
+           if (gploc_C0 == 0) break;
+           iVar7 = iVar7 + 1;
+           if (-1 < iVar7) goto loc_783239;
+        }
+     }
+  } while( true );
+
+#else
 #if __GNUC__
     asm volatile (" \
     pusha   \n \
@@ -4996,6 +6997,7 @@ off_784060:\n \
 locret69b:\n \
     popa    \n \
 " : : : "memory", "cc");
+#endif
 #endif
 }
 
